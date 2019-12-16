@@ -147,6 +147,7 @@
     
     function startGame()
     {
+        music.play();
         gameStarted = true;
     }
     
@@ -181,12 +182,10 @@
         bulletList[id] = bullet;
     }
     
-    function Zombie(id,x,y,spdX,spdY,width,height){
+    function Zombie(id,x,y,width,height){
         var zombie = {
                 x:x,
-                spdX:spdX,
                 y:y,
-                spdY:spdY,
                 width: width,
                 height: height,
                 name:'E',
@@ -210,11 +209,9 @@
         var id = Math.random();
         var x = Math.random()*650;
         var y = Math.random()*600 + 50;
-        var spdX = 3*Math.random();
-        var spdY = 3*Math.random();
         var height = 10 + Math.random()*30;
         var width = 10 + Math.random()*30;   
-        Zombie(id,x,y,spdX,spdY,width,height);
+        Zombie(id,x,y,width,height);
     }
     
     function generateBullet(){
@@ -247,7 +244,7 @@
         }
         if(event.keyCode === 69)
         {
-            music.play();
+            
         }
                 
     }
@@ -305,23 +302,38 @@
         var targetX = player.x - other.x;
         var targetY = player.y - other.y;
             
-            other.rotation = Math.atan2(targetY, targetX);
-            //ctx.transform(1, 0, 0, 1, this.x, this.y);
+        other.rotation = Math.atan2(targetY, targetX);
+        //ctx.transform(1, 0, 0, 1, this.x, this.y);
    
-            ctx.save()
-            ctx.translate(other.x, other.y);
-            ctx.rotate(other.rotation + 1.7);
-            ctx.drawImage(zombieImg, -15, -15);
-            ctx.restore();
+        ctx.save()
+        ctx.translate(other.x, other.y);
+        ctx.rotate(other.rotation + 1.5);
+        ctx.drawImage(zombieImg, -17, -17);
+        ctx.restore();
         
-        //other.x += other.spdX;
-        //other.y += other.spdY;
+        if(targetX > 0)
+        {
+            other.x += 2;
+        }
+        else
+        {
+            other.x -= 2;  
+        }
+        
+        if(targetY > 0)
+        {
+            other.y += 2;
+        }
+        else
+        {
+            other.y -= 2;  
+        }
                       
         if(other.x < 0 || other.x > (width - 40)){
-                other.spdX = -other.spdX;
+                
         }
         if(other.y < 60 || other.y > (height-40)){
-                other.spdY = -other.spdY;
+                
         }      
     }
     
@@ -666,12 +678,10 @@
                 
                 if (dir === "l" || dir === "r") 
                 {
-                    zombieList[key2].spdX = -zombieList[key2].spdX;
                     break;
                 }       
                 if(dir === "t" || dir === "b")
                 {
-                    zombieList[key2].spdY = -zombieList[key2].spdY;
                     break;
 			
                 }               
