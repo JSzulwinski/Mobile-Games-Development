@@ -602,12 +602,10 @@
         upgradeList = {};
         }  
         
-        //ROTATES THE PLAYER TOWARDS MOUSE CURSOR EVEN IF ENEMY IS NOT MOVING
+        //ROTATES THE PLAYER TOWARDS MOUSE AT ALL TIMES
+        rtate();    
+            
         animationFrame();
-        if (isKeyPressed == false)
-        {	
-            rtate();
-        }
 
         //IS MOUSE PRESSED
         if(mouseDown === true)
@@ -620,25 +618,21 @@
 			// S Key
 			if(player.y<(canvas.height-player.height-40))
 				player.velY += playerSpeed;
-            rtate();
 		}
 		if (keys[87]) {
 			// W Key
 			if(player.y>80)
 				player.velY -= playerSpeed;
-            rtate();
 		}
 		if (keys[68]) {
 			// D Key
 			if(player.x<(canvas.width-player.width-40))
 				player.velX += playerSpeed;
-            rtate();
 		}
 		if (keys[65]) {
 			// A Key
 			if(player.x>player.width)
 				player.velX -= playerSpeed;
-            rtate();
 		}
         
 
