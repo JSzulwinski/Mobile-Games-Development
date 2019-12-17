@@ -6,7 +6,7 @@
        #startBtn
         {
             position: absolute;
-            top: 400px;
+            top: 600px;
             left: 300px;
             width: 100px;
             height: 60px;
@@ -287,7 +287,7 @@
     //SETS MAXIMUM RATE OF FIRE
     function attack()
     {
-        if(player.attackCounter > 50)
+        if(player.attackCounter > 10)
         { 
             generateBullet();
             player.attackCounter = 0;
@@ -442,7 +442,7 @@
                 generateZombie();
     
             //ADDS TO THE PLAYERS RATE OF FIRE
-            player.attackCounter += 5;
+            player.attackCounter++;
         }
         //IF PLAYER IS DEAD    
         else if (isGameOver === true) 
