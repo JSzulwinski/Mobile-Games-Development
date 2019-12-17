@@ -403,7 +403,7 @@
             
             frameCount++;
         
-            if(frameCount % 100 === 0)
+            if(frameCount % 60 === 0)
                generateEnemy();
             
             if(frameCount % 100 === 0)
@@ -611,12 +611,13 @@
             stamina-= 2;
             sprinting = true;
             }
-        }
-        else
+            else
         {
             sprinting = false;
             playerSpeed = 0.8;
         } 
+        }
+        
             
         if (sprinting === false)
         {
