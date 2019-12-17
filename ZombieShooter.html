@@ -28,13 +28,31 @@
 <button type="button" id="restartBtn" onclick="restartGame()">REPLAY</button>
 <button type="button" id="startBtn" onclick="startGame()">START</button>
 <script>
+    
+    //ANIMATION FRAMES
     var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 	window.requestAnimationFrame = requestAnimationFrame;
-       
+     
+    //FRAMES
+    var frameX = 0;
+    var frameXMax = 1;
+    var frameY = 0;
+    var frameYMax = 1;
+    var frame = 0;
+    var frameMax = 26;
+    var frameTimer = 0.05;
+    var frameTimeMax = 0.017;
+    var frameCount = 0;
+     
+    //CANVAS
     var canvas = document.getElementById("canvasForTheGame");
 	var width = 700;
 	var height = 700;
 	var ctx = canvas.getContext("2d");
+    canvas.width = width;
+	canvas.height = height; 
+    
+    //PLAYER DATA
 	var player = 
     {
 		x: width / 2,
@@ -48,19 +66,10 @@
         aimAngle:0,
 	};
     
-    var imgCrate = new Image();
-    var boxes = [];
-
-	var keys = [];
-	var friction = 0.8;
-
-	canvas.width = width;
-	canvas.height = height;
-    
+    //BUTTON
     var startBtn = document.getElementById('startBtn');
-    var paused = false;
-    var isGameOver = false;
-    var test = false;
+
+    //FLOATS
     var timeGameStarted = Date.now();
     var score;
     var stamina = 500;
@@ -68,17 +77,24 @@
     var shootDirection;
     var timeSurvived = 0;
     var startTimeMS = 0;
-    var frameX = 0;
-    var frameXMax = 1;
-    var frameY = 0;
-    var frameYMax = 1;
-    var frame = 0;
-    var frameMax = 26;
-    var frameTimer = 0.05;
-    var frameTimeMax = 0.017;
-    var frameCount = 0;
+    var staminaRatio = 0;
+    var friction = 0.8;
+    
+    //BOOLEANS
+    var gameStarted = false;
+    var sprinting = false;
+    var paused = false;
+    var isGameOver = false;
+    var test = false;
+
+    
+    //PLAYER SPRITE
     var spriteWidth = 32;
     var spriteHeight = 32;
+    
+
+    
+    //IMAGES
     var img = new Image();
     var enemyImg = new Image();
     var bulletImg = new  Image();
@@ -86,29 +102,38 @@
     var mapImg = new Image();
     var mapTitle = new Image();
     var zombieImg = new Image();
+    var imgCrate = new Image();
+    
+    //SOUNDS
     var music = new Audio();
     var shotSound = new Audio();
     var hitSound = new Audio();
     var damageSound = new Audio();
     
+    //INPUTS (KEYBOARD AND MOUSE)
     var mouseX;
     var mouseY;
-
     var mouseDown = false;
-    var isKeyPressed = false;
-    
-    var gameStarted = false;
-    
-    var staminaRatio = 0;
-    var sprinting = false;
-    
-    //Lists    
+    var isKeyPressed = false;  
+
+    //LISTS  
     var enemyList = {};
     var bulletList = {};
     var upgradeList = {};
     var zombieList = {};
     
+    //ARRAYS
+    var boxes = [];
+	var keys = [];
     
+    //LOADS MAIN FUNCTIONS
+    window.addEventListener("load", function ()
+    {
+        start();
+        update();
+	});
+    
+    //SETTING UP ALL THE VARIABLES AND DISPLAYING THE INITIAL TEXT
     function start()
     {
         restartGame();
@@ -145,13 +170,14 @@
         playerSpeed = 0.8;
     }
     
+    //THIS IS CALLED BY A BUTTON PRESSED IN THE TITLE SCREEN
     function startGame()
     {
         music.play();
         gameStarted = true;
     }
     
-    
+    //ENEMY DATA
     function Enemy(id,x,y,spdX,spdY,width,height){
         var enemy = {
                 x:x,
@@ -166,6 +192,7 @@
         enemyList[id] = enemy;
     }
     
+    //BULLET DATA
     function Bullet(id,x,y,spdX,spdY,width,height){
         var bullet = {
                 x:x,
@@ -182,6 +209,7 @@
         bulletList[id] = bullet;
     }
     
+    //2ND ENEMY DATA
     function Zombie(id,x,y,width,height){
         var zombie = {
                 x:x,
@@ -194,6 +222,7 @@
         zombieList[id] = zombie;
     }
     
+    //FUNCTION SPAWNING ENEMY
     function generateEnemy(){
         var id = Math.random();
         var x = Math.random()*650;
@@ -205,6 +234,7 @@
         Enemy(id,x,y,spdX,spdY,width,height);
     }
     
+    //FUNCTION SPAWNING SECOND ENEMY
     function generateZombie(){
         var id = Math.random();
         var x = Math.random()*650;
@@ -214,6 +244,7 @@
         Zombie(id,x,y,width,height);
     }
     
+    //FUNCTION SPAWNING BULLET
     function generateBullet(){
         var id = Math.random();
         var x = player.x+18;
@@ -227,7 +258,6 @@
     }
     
     //PAUSE FUNCTION
-    
     document.onkeydown = function(event){
         if(event.keyCode === 80)
         {
@@ -240,16 +270,10 @@
                 {
                     paused = true;          
                 }
-
-        }
-        if(event.keyCode === 69)
-        {
-            
-        }
-                
+        }   
     }
     
-    //SHOOTING
+    //CHECKS IF THE MOUSE BUTTON IS PRESSED - USED FOR RAPID FIRE
     document.onmousedown = function(mouse)
     {
         mouseDown = true;
@@ -260,6 +284,7 @@
         mouseDown = false;
     }
     
+    //SETS MAXIMUM RATE OF FIRE
     function attack()
     {
         if(player.attackCounter > 50)
@@ -270,7 +295,7 @@
         }
     }
      
-    //MOUSE POSITION
+    //MOUSE POSITION AND ANGLE
     document.onmousemove = function(mouse){
         mouseX = mouse.clientX;
         mouseY = mouse.clientY;
@@ -278,8 +303,8 @@
         mouseX -= player.x +19;
         mouseY -= player.y +19;
         
+        //CHECKS ANGLE FROM PLAYERS POSITION TO MOUSE POSITION
         player.aimAngle = Math.atan2(mouseY, mouseX)/Math.PI*180;
-
     }
     
     //ENEMY1 UPDATE ENTITIY
@@ -287,8 +312,11 @@
         something.x += something.spdX;
         something.y += something.spdY;
 
+        //DRAW THE OBJECT
         ctx.drawImage(enemyImg, something.x, something.y);
-                      
+        
+        //COLLISION DETECTION
+        //IF ENEMY HITS THE WALL, DIRECTION OFITS MOVEMENT CHANGES
         if(something.x < 0 || something.x > (width - 40)){
                 something.spdX = -something.spdX;
         }
@@ -297,20 +325,24 @@
         }      
     }
     
+    //ENEMY2 UPDATE ENTITY
     function updateZombieEntity(other){
         
+        //TARGET POSITION FOR ENEMY FOLLOW
         var targetX = player.x - other.x;
         var targetY = player.y - other.y;
             
         other.rotation = Math.atan2(targetY, targetX);
         //ctx.transform(1, 0, 0, 1, this.x, this.y);
    
+        //ENEMY ROTATION TOWARDS THE PLAYER
         ctx.save()
         ctx.translate(other.x, other.y);
         ctx.rotate(other.rotation + 1.5);
         ctx.drawImage(zombieImg, -17, -17);
         ctx.restore();
         
+        //MOVEMENT TOWARDS THE PLAYER
         if(targetX > 0)
         {
             other.x += 2;
@@ -327,14 +359,7 @@
         else
         {
             other.y -= 2;  
-        }
-                      
-        if(other.x < 0 || other.x > (width - 40)){
-                
-        }
-        if(other.y < 60 || other.y > (height-40)){
-                
-        }      
+        }   
     }
     
     //UPDATE ENTITY OTHER THAN ENEMY 
@@ -342,96 +367,111 @@
         something.x += something.spdX;
         something.y += something.spdY;
 
-        ctx.drawImage(somethingImg, something.x, something.y);
-                        
+        ctx.drawImage(somethingImg, something.x, something.y);                     
     }
-
     
-
-    window.addEventListener("load", function (){
-        start();
-        update();
-	});
-    
+    //CHECKS IF ANY KEY IS PRESSED
     document.body.addEventListener("keydown", function (e) {
 		keys[e.keyCode] = true;
 		isKeyPressed = true;
 	});
-    
     document.body.addEventListener("keyup", function (e) {
 		keys[e.keyCode] = false;
 		isKeyPressed = false;
 	});
    
+    //ROTATE PLAYER AROUND ITS CENTER POINT
     function rtate()
     {
         ctx.save();
         ctx.translate(player.x + 20, player.y + 20);
         ctx.rotate(player.aimAngle * Math.PI / 180 - 1.7);
         ctx.drawImage(img, 0, 32, spriteWidth, spriteHeight, -19, -19, player.width, player.height);
-        //ctx.translate(-10, -10);
         ctx.restore();
     }
-        
+    
+    //UPDATE
     function update()
-    {     
+    {   
+        //CLEAR CANVAS        
+        ctx.clearRect(0, 0, width, height); 
+        
+        //CHECKS IF GAME IS PAUSED
         if(paused)
         {
             ctx.fillText('Paused', width/2, height/2);
             return;
-        }    
-        ctx.clearRect(0, 0, width, height); 
+        }
         
+        //IF GAME IS NOT STARTED
         if(gameStarted === false)
         {
+            //DRAW TITLE SCREEN
             drawTitle();
             requestAnimationFrame(update);
         }
  
+        //IF GAME IS STARTED
         else if (gameStarted === true)
         {
+            //DRAW MAP
             drawMap();
             startBtn.style.display = 'none';
-            
+        
+        //IF PLAYER IS ALIVE
         if (isGameOver === false)   
         {
+            //UPDATE HEALTH, SCORE AND ENERGY
             ctx.fillText("HP: " + player.hp, 50, 30); 
             ctx.fillText("Score: " + score, 580, 30);
-            ctx.fillRect(130, 10, staminaRatio, 25);
+            ctx.fillText("Stamina: ", 250, 30);
+            ctx.fillRect(330, 10, staminaRatio, 25);
             
+            //INCREASE SCORE WITH EVERY FRAME
             score++;
             
+            //COUNT FRAMES
             frameCount++;
         
+            //HOW OFTEN ARE ENEMIES SPAWNED
+            
             if(frameCount % 60 === 0)
                generateEnemy();
             
             if(frameCount % 100 === 0)
                 generateZombie();
-        
-            
+    
+            //ADDS TO THE PLAYERS RATE OF FIRE
             player.attackCounter += 5;
         }
+        //IF PLAYER IS DEAD    
         else if (isGameOver === true) 
         {
             ctx.fillText("YOU DIED. SCORE: " + score, 350, 30);
             restartBtn.style.display = 'block';
         }
-            
+        
+        //THE LENGTH OF ENERGY BAR
         staminaRatio = 100*stamina/500;
-            
+        
+        //KEEPS BOXES FROM BEING PUSHED AROUND BY ENEMIES
         for(var key in boxes)     
             {
                 boxes[key].x = boxes[key].posX
                 boxes[key].y = boxes[key].posY
             }
         
-        for(var key in enemyList){
             
+        for(var key in enemyList)
+        {    
+            //UPDATE ALL ENEMY DATA
             updateEntity(enemyList[key]);
             
+            //COLLISION WITH PLAYER DETECTION
             var dir = colCheck(player, enemyList[key]);
 
+            //DEAL DAMAGE IF COLLIDED
+            //DESTROY ENEMY
 			if (dir === "l" || dir === "r") {
                 delete enemyList[key];
                 player.hp -= 1
@@ -440,16 +480,19 @@
                 delete enemyList[key];
                 player.hp -= 1
                 hitSound.play();
-			}
-            timeSurvived = Date.now() - timeGameStarted;
+			}            
         }
             
         for(var key in zombieList){
             
+            //UPDATE ALL ZOMBIE DATA
             updateZombieEntity(zombieList[key]);
             
+            //COLLISION DETECTION
             var dir = colCheck(player, zombieList[key]);
 
+            //DEAL DAMAGE IF COLLIDED
+            //DESTROY ZOMBIE
 			if (dir === "l" || dir === "r") {
                 delete zombieList[key];
                 player.hp -= 1
@@ -459,23 +502,27 @@
                 player.hp -= 1
                 hitSound.play();
 			}
-            timeSurvived = Date.now() - timeGameStarted;
         }
         
         
-        //BULLET
-        
-        for(var key in bulletList){
+        //THIS HAPPENS FOR EVERY BULLET    
+        for(var key in bulletList)
+        {
+            //UPDATE BULLET DATA
             updateEntityOther(bulletList[key], bulletImg); 
             
+            //DONT DESTROY BULLET
             var toRemove = false;
             
+            //DESTROY BULLET AFTER 100 FRAMES
             bulletList[key].timer++;
             if(bulletList[key].timer > 100)
                 {   
                     toRemove = true;
                 }
             
+            //IF COLLIDED WITH ENEMY, DELETE THE ENEMY
+            //PLAY SOUND
             for(var key2 in enemyList)     
             {
                 var dir = colCheck(enemyList[key2], bulletList[key]);
@@ -497,6 +544,8 @@
                 }               
             }
             
+            //IF COLLIDED WITH ZOMBIE, DELETE THE ZOMBIE
+            //PLAY SOUND
             for(var key2 in zombieList)     
             {
                 var dir = colCheck(zombieList[key2], bulletList[key]);
@@ -518,6 +567,7 @@
                 }               
             }
             
+            //IF COLLIDED WITH BOXES, DELETE BULLET
             for(var key2 in boxes)     
             {
                 var dir = colCheck(boxes[key2], bulletList[key]);
@@ -535,16 +585,16 @@
                 }               
             }
             
+            //DELETES THE BULLET
             if (toRemove)
                 {
                     delete bulletList[key];	
                 }
         }
         
-        
+        //WHAT HAPPENS WHEN PLAYER DIES
         if (player.hp <= 0)
-        {
-                            
+        {                     
         isGameOver = true;
         player.hp = 20;
         enemyList = {};
@@ -552,25 +602,20 @@
         upgradeList = {};
         }  
         
+        //ROTATES THE PLAYER TOWARDS MOUSE CURSOR EVEN IF ENEMY IS NOT MOVING
         animationFrame();
         if (isKeyPressed == false)
         {	
-                    //music.play();
             rtate();
         }
-        if (isKeyPressed == true)
-        {	
-            music.play();
-        }
 
-        //SHOOTING
+        //IS MOUSE PRESSED
         if(mouseDown === true)
         {
             attack();
         }
         
-        //MOVE DIRECTION
-        
+        //MOVE DIRECTION 
         if (keys[83]) {
 			// S Key
 			if(player.y<(canvas.height-player.height-40))
@@ -596,13 +641,8 @@
             rtate();
 		}
         
-        //ROTATE
-        if (keys[71]) 
-        {
-            rtate();
-		}
-            
-        //SPRINT
+
+        //SPRINTING HAPPENS WHEN PLAYER HAS STAMINA AND PRESSES LEFT SHIFT
         if (keys[16])
         {
             if (stamina > 0)
@@ -612,13 +652,19 @@
             sprinting = true;
             }
             else
+            {
+            sprinting = false;
+            playerSpeed = 0.8;
+            }
+        }
+        //IF L SHIFT IS NOT PRESSED, SET TO NORMAL SPEED
+        else
         {
             sprinting = false;
             playerSpeed = 0.8;
         } 
-        }
-        
             
+        //NOT SPRINTING - SETS SPEED TO NORMAL    
         if (sprinting === false)
         {
             if(stamina < 500)
@@ -626,28 +672,23 @@
                 stamina +=0.5;
             }
         }
-            
-        //console.log(stamina);
         
+        //DATA FOR PLAYER MOVEMENT   
         player.velX *= friction;
 		player.velY *= friction;
 		player.x += player.velX;
 		player.y += player.velY;
 
-
 		requestAnimationFrame(update);
         
-        //ENABLE BOXES
-        
+        //DRAW EVERY BOX AND CHECK FOR COLLISIONS
         for (var i = 0; i < boxes.length; i++) 
         {
-            //boxes[i].x = Math.random()*650/*canvas.width*/;
-            //boxes[i].y = Math.random()*650;
-            
-			// show the boxes on canvas
+            //SHOW BOXES ON CANVAS
 			ctx.rect(boxes[i].x, boxes[i].y, boxes[i].width, boxes[i].height);
 			ctx.drawImage(imgCrate, boxes[i].x, boxes[i].y, boxes[i].width, boxes[i].height);
-			// check if collide with players
+            
+			//COLLISION DETECTION WITH PLAYER
 			var dir = colCheck(player, boxes[i]);
 
 			if (dir === "l" || dir === "r") {
@@ -656,6 +697,7 @@
 				player.velY = 0;
 			}
             
+            //COLLISION DETECTION WITH ENEMIES
             for(var key2 in enemyList)     
             {
                 var dir = colCheck(enemyList[key2], boxes[i]);
@@ -673,6 +715,7 @@
                 }               
             }
             
+            //COLLISION DETECTION WITH ZOMBIES
             for(var key2 in zombieList)     
             {
                 var dir = colCheck(zombieList[key2], boxes[i]);
@@ -693,18 +736,19 @@
         }
     }
     
+    //THIS FUNCTION IS USED FOR COLLISION DETECTION
     function colCheck(shapeA, shapeB) {
-		// get the vectors to check against
+		//GET THE VECTORS TO CHECK AGAINST
 		var vX = (shapeA.x + (shapeA.width / 2)) - (shapeB.x + (shapeB.width / 2)),
 			vY = (shapeA.y + (shapeA.height / 2)) - (shapeB.y + (shapeB.height / 2)),
-			// add the half widths and half heights of the objects
+			//ADD THE DISTANCE FROM THE CENTER OF THE OBJECT
 			hWidths = (shapeA.width / 2) + (shapeB.width / 2),
 			hHeights = (shapeA.height / 2) + (shapeB.height / 2),
 			colDir = null;
 
-		// if the x and y vector are less than the half width or half height, they we must be inside the object, causing a collision
+		//IF THE VECTORS ARE LESS THAN HALF WIDTH OR HALF HEIGHT THEN OBJECTS ARE COLLIDING
 		if (Math.abs(vX) < hWidths && Math.abs(vY) < hHeights) {
-			// figures out on which side we are colliding (top, bottom, left, or right)
+			//CHECKS WHICH SIDE IS COLLIDING
 			var oX = hWidths - Math.abs(vX),
 				oY = hHeights - Math.abs(vY);
 			if (oX >= oY) 
@@ -730,12 +774,13 @@
 		}
 		return colDir;      
 	}	
-        
+    
+    //THIS IS USED FOR UPDATING FRAMES
     function animationFrame(){
 		var elapsed = (Date.now() - startTimeMS)/1000;
 		startTimeMS = Date.now();
 
-		//only update frames when timer is below 0
+		//UPDATE FRAMES WHEN TIMER IS BELOW ZERO
 		frameTimer = frameTimer - elapsed;
 		if(frameTimer <= 0)
 		{
@@ -745,14 +790,13 @@
 			{
 			  frameX = 0;
 			  frameY++;
-			  //end of row, move down to next row in sheet
 			  if(frameY>frameYMax)
 			  {
 				  frameY = 0;
 			  }
 			}
 			frame++;
-			//reset frames to 0 in event that there are empty spaces on sprite sheet
+			//RESET FRAMES TO ZERO
 			if(frame > frameMax)
 			{
 			  frame = 0;
@@ -762,17 +806,21 @@
 		}
     }
     
+    //DRAW THE BACKGROUND
     function drawMap()
     {
         ctx.drawImage(mapImg, 0, -40, 2000, 2000, 0, 0, mapImg.width*3, mapImg.height*3);
     }
+    //DRAW THE TITLE SCREEN
     function drawTitle()
     {
         ctx.drawImage(mapTitle, 0, -40, 2220, 2220, 0, 0, mapImg.width*3, mapImg.height*3);
     }
     
+    //RESETS ALL THE GAME DATA
     function restartGame()
     {
+        //ADDS BOXES TO THE ARRAY
         boxes = [];
         boxes.push({
 			posX: Math.random()*650,
@@ -846,24 +894,21 @@
 			width: 40,
 			height: 40
 		});
+        
         player.hp = 20;
         timeGameStarted = Date.now();
         frameCount = 0;
         enemyList = {};
         score = 0;
         bulletList = {};
-        //upgradeList = {};
         generateEnemy();
         generateEnemy();
         generateEnemy(); 
         generateZombie(); 
         restartBtn.style.display = 'none';
         isGameOver = false;
-        
-
     }
     
-
 </script>
 </body>
 </html>
